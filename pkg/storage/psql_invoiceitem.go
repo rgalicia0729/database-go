@@ -7,7 +7,7 @@ import (
 
 const (
 	psqlMigrateInvoiceitem = `
-		CREATE TABLE IF NOT EXISTS invoice_item(
+		CREATE TABLE IF NOT EXISTS invoice_items(
 			id SERIAL NOT NULL,
 			invoice_header_id INT NOT NULL,
 			product_id INT NOT NULL,

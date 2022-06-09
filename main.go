@@ -1,11 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/joho/godotenv"
-	"github.com/rgalicia0729/database-go/pkg/invoiceheader"
-	"github.com/rgalicia0729/database-go/pkg/invoiceitem"
 	"github.com/rgalicia0729/database-go/pkg/product"
 	"github.com/rgalicia0729/database-go/pkg/storage"
 )
@@ -20,21 +19,24 @@ func main() {
 	storageProduct := storage.NewPsqlProduct(storage.Pool())
 	serviceProduct := product.NewService(storageProduct)
 
-	if err := serviceProduct.Migrate(); err != nil {
-		log.Fatalf("product.Migrate: %v\n", err)
+	products, err := serviceProduct.GetAll()
+	if err != nil {
+		log.Fatalf("product.GetAll: %v", err)
 	}
 
-	storageInvoiceheader := storage.NewPsqlInvoiceheader(storage.Pool())
-	serviceInvoiceheader := invoiceheader.NewService(storageInvoiceheader)
+	fmt.Println(products)
 
-	if err := serviceInvoiceheader.Migrate(); err != nil {
-		log.Fatalf("invoiceheader.Migrate: %v\n", err)
-	}
+	// storageInvoiceheader := storage.NewPsqlInvoiceheader(storage.Pool())
+	// serviceInvoiceheader := invoiceheader.NewService(storageInvoiceheader)
 
-	storageInvoiceitem := storage.NewPsqlInvoiceitem(storage.Pool())
-	serviceInvoiceitem := invoiceitem.NewService(storageInvoiceitem)
+	// if err := serviceInvoiceheader.Migrate(); err != nil {
+	// 	log.Fatalf("invoiceheader.Migrate: %v\n", err)
+	// }
 
-	if err := serviceInvoiceitem.Migrate(); err != nil {
-		log.Fatalf("invoiceitem.Migrate: %v\n", err)
-	}
+	// storageInvoiceitem := storage.NewPsqlInvoiceitem(storage.Pool())
+	// serviceInvoiceitem := invoiceitem.NewService(storageInvoiceitem)
+
+	// if err := serviceInvoiceitem.Migrate(); err != nil {
+	// 	log.Fatalf("invoiceitem.Migrate: %v\n", err)
+	// }
 }
