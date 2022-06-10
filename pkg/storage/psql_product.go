@@ -30,7 +30,17 @@ const (
 		SELECT id, name, observations, price, created_at, updated_at
 		FROM products
 	`
+
+	psqlGetProductById = `
+		SELECT id, name, observations, price, created_at, updated_at
+		FROM products
+		WHERE id = $1
+	`
 )
+
+type scanner interface {
+	Scan(dest ...any) error
+}
 
 // PsqlProduct used for work with postgres - product
 type PsqlProduct struct {
@@ -74,27 +84,12 @@ func (p *PsqlProduct) GetAll() (product.Models, error) {
 
 	var models product.Models
 	for rows.Next() {
-		var model product.Model
-
-		var observationsNull sql.NullString
-		var updatedAtNull sql.NullTime
-
-		err := rows.Scan(
-			&model.ID,
-			&model.Name,
-			&observationsNull,
-			&model.Price,
-			&model.CreatedAt,
-			&updatedAtNull,
-		)
+		model, err := scanRowProduct(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		model.Observations = observationsNull.String
-		model.UpdatedAt = updatedAtNull.Time
-
-		models = append(models, &model)
+		models = append(models, model)
 	}
 
 	if err := rows.Err(); err != nil {
@@ -102,6 +97,16 @@ func (p *PsqlProduct) GetAll() (product.Models, error) {
 	}
 
 	return models, nil
+}
+
+func (p *PsqlProduct) GetById(id uint64) (*product.Model, error) {
+	stmt, err := p.db.Prepare(psqlGetProductById)
+	if err != nil {
+		return &product.Model{}, err
+	}
+	defer stmt.Close()
+
+	return scanRowProduct(stmt.QueryRow(id))
 }
 
 func (p *PsqlProduct) Create(m *product.Model) error {
@@ -123,4 +128,28 @@ func (p *PsqlProduct) Create(m *product.Model) error {
 	log.Println("Se creo el producto correctamente")
 
 	return nil
+}
+
+func scanRowProduct(s scanner) (*product.Model, error) {
+	var model product.Model
+
+	var observationsNull sql.NullString
+	var updatedAtNull sql.NullTime
+
+	err := s.Scan(
+		&model.ID,
+		&model.Name,
+		&observationsNull,
+		&model.Price,
+		&model.CreatedAt,
+		&updatedAtNull,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	model.Observations = observationsNull.String
+	model.UpdatedAt = updatedAtNull.Time
+
+	return &model, nil
 }
