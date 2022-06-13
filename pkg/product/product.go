@@ -1,6 +1,7 @@
 package product
 
 import (
+	"errors"
 	"fmt"
 	"time"
 )
@@ -36,7 +37,14 @@ type Storage interface {
 	Create(*Model) error
 	GetAll() (Models, error)
 	GetById(uint64) (*Model, error)
+	Update(*Model) error
+	Delete(uint) error
 }
+
+var (
+	ErrIdNotFound     = errors.New("error: id not found")
+	ErrRecordNotFound = errors.New("error: record not found")
+)
 
 // Service of product
 type Service struct {
@@ -63,4 +71,18 @@ func (s *Service) GetAll() (Models, error) {
 
 func (s *Service) GetById(id uint64) (*Model, error) {
 	return s.storage.GetById(id)
+}
+
+func (s *Service) Update(m *Model) error {
+	if m.ID == 0 {
+		return ErrIdNotFound
+	}
+
+	m.UpdatedAt = time.Now()
+
+	return s.storage.Update(m)
+}
+
+func (s *Service) Delete(id uint) error {
+	return s.storage.Delete(id)
 }

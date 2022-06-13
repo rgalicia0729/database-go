@@ -36,6 +36,17 @@ const (
 		FROM products
 		WHERE id = $1
 	`
+
+	psqlUpdateProduct = `
+		UPDATE products
+		SET name=$1, observations=$2, price=$3, updated_at=$4
+		WHERE id = $5 
+	`
+
+	psqlDeleteProduct = `
+		DELETE FROM products
+		WHERE id = $1
+	`
 )
 
 type scanner interface {
@@ -126,6 +137,48 @@ func (p *PsqlProduct) Create(m *product.Model) error {
 	}
 
 	log.Println("Se creo el producto correctamente")
+
+	return nil
+}
+
+func (p *PsqlProduct) Update(m *product.Model) error {
+	stmt, err := p.db.Prepare(psqlUpdateProduct)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(
+		m.Name,
+		stringToNull(m.Observations),
+		m.Price,
+		timeToNull(m.UpdatedAt),
+		m.ID,
+	)
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected, err := res.RowsAffected(); err != nil {
+		return err
+	} else if rowsAffected == 0 {
+		return product.ErrRecordNotFound
+	}
+
+	return nil
+}
+
+func (p *PsqlProduct) Delete(id uint) error {
+	stmt, err := p.db.Prepare(psqlDeleteProduct)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
